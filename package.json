@@ -1,0 +1,21 @@
+{
+  "name": "control-propiedades",
+  "private": true,
+  "packageManager": "npm@11.17.0",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=@control-propiedades/web",
+    "build": "npm run build --workspace=@control-propiedades/web",
+    "lint": "npm run lint --workspace=@control-propiedades/web"
+  },
+  "engines": {
+    "node": ">=20.9"
+  },
+  "overrides": {
+    "next@16.2.10": {
+      "postcss": "8.5.10"
+    }
+  }
+}

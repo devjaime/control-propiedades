@@ -1,0 +1,19 @@
+.DS_Store
+.env
+.env.local
+!.env.example
+
+# Go
+bin/
+coverage.out
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+apps/web/next-env.d.ts
+
+# Editors
+.idea/
+.vscode/
