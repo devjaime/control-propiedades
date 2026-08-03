@@ -13,6 +13,7 @@ import (
 
 	"github.com/devjaime/control-propiedades/apps/api/internal/config"
 	"github.com/devjaime/control-propiedades/apps/api/internal/platform/httpserver"
+	"github.com/devjaime/control-propiedades/apps/api/internal/platform/objectstorage"
 )
 
 func main() {
@@ -41,9 +42,34 @@ func main() {
 	}
 	defer pool.Close()
 
+	storage, err := objectstorage.New(
+		cfg.Storage.Endpoint,
+		cfg.Storage.Region,
+		cfg.Storage.AccessKey,
+		cfg.Storage.SecretKey,
+		cfg.Storage.Bucket,
+		cfg.Storage.UseSSL,
+	)
+	if err != nil {
+		logger.Error("create object storage client", "error", err)
+		os.Exit(1)
+	}
+	if err := storage.EnsureBucket(ctx); err != nil {
+		logger.Error("ensure object storage bucket", "error", err)
+		os.Exit(1)
+	}
+
 	server := &http.Server{
-		Addr:              cfg.Server.Address,
-		Handler:           httpserver.New(logger, pool),
+		Addr: cfg.Server.Address,
+		Handler: httpserver.NewApplication(logger, pool, storage, httpserver.Options{
+			Environment:    cfg.Environment,
+			WebOrigin:      cfg.Auth.WebOrigin,
+			PublicWebURL:   cfg.Auth.PublicWebURL,
+			SessionTTL:     cfg.Auth.SessionTTL,
+			CookieName:     cfg.Auth.CookieName,
+			CookieSecure:   cfg.Auth.CookieSecure,
+			MaxUploadBytes: cfg.Storage.MaxUploadBytes,
+		}),
 		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
 		ReadTimeout:       cfg.Server.ReadTimeout,
 		WriteTimeout:      cfg.Server.WriteTimeout,

@@ -14,6 +14,8 @@ type Config struct {
 	ShutdownTimeout time.Duration
 	Server          Server
 	Database        Database
+	Auth            Auth
+	Storage         Storage
 }
 
 type Server struct {
@@ -29,6 +31,24 @@ type Database struct {
 	MaxConns int32
 }
 
+type Auth struct {
+	WebOrigin    string
+	PublicWebURL string
+	SessionTTL   time.Duration
+	CookieName   string
+	CookieSecure bool
+}
+
+type Storage struct {
+	Endpoint       string
+	Region         string
+	AccessKey      string
+	SecretKey      string
+	Bucket         string
+	UseSSL         bool
+	MaxUploadBytes int64
+}
+
 func Load() (Config, error) {
 	shutdownTimeout, err := durationEnv("SHUTDOWN_TIMEOUT", 10*time.Second)
 	if err != nil {
@@ -38,7 +58,20 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	sessionTTL, err := durationEnv("SESSION_TTL", 7*24*time.Hour)
+	if err != nil {
+		return Config{}, err
+	}
+	maxUploadBytes, err := int32Env("MAX_UPLOAD_BYTES", 50*1024*1024)
+	if err != nil {
+		return Config{}, err
+	}
+	storageUseSSL, err := boolEnv("STORAGE_USE_SSL", false)
+	if err != nil {
+		return Config{}, err
+	}
 
+	webOrigin := stringEnv("WEB_ORIGIN", "http://localhost:3000")
 	cfg := Config{
 		Environment:     stringEnv("APP_ENV", "local"),
 		ShutdownTimeout: shutdownTimeout,
@@ -53,12 +86,43 @@ func Load() (Config, error) {
 			URL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
 			MaxConns: maxConns,
 		},
+		Auth: Auth{
+			WebOrigin:    webOrigin,
+			PublicWebURL: stringEnv("PUBLIC_WEB_URL", webOrigin),
+			SessionTTL:   sessionTTL,
+			CookieName:   stringEnv("SESSION_COOKIE_NAME", "cp_session"),
+			CookieSecure: stringEnv("APP_ENV", "local") == "production",
+		},
+		Storage: Storage{
+			Endpoint:       stringEnv("STORAGE_ENDPOINT", "localhost:9000"),
+			Region:         stringEnv("STORAGE_REGION", "us-east-1"),
+			AccessKey:      strings.TrimSpace(os.Getenv("STORAGE_ACCESS_KEY")),
+			SecretKey:      strings.TrimSpace(os.Getenv("STORAGE_SECRET_KEY")),
+			Bucket:         stringEnv("STORAGE_BUCKET", "control-propiedades"),
+			UseSSL:         storageUseSSL,
+			MaxUploadBytes: int64(maxUploadBytes),
+		},
 	}
 
 	if cfg.Database.URL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")
 	}
+	if cfg.Storage.AccessKey == "" || cfg.Storage.SecretKey == "" {
+		return Config{}, errors.New("STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY are required")
+	}
 	return cfg, nil
+}
+
+func boolEnv(name string, fallback bool) (bool, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("%s must be a boolean", name)
+	}
+	return parsed, nil
 }
 
 func stringEnv(name, fallback string) string {

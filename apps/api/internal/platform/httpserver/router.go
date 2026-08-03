@@ -16,6 +16,10 @@ type DatabasePinger interface {
 }
 
 func New(logger *slog.Logger, database DatabasePinger) http.Handler {
+	return newRouter(logger, database)
+}
+
+func newRouter(logger *slog.Logger, database DatabasePinger) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)

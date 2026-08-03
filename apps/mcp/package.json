@@ -1,0 +1,15 @@
+{
+  "name": "@control-propiedades/mcp",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "control-propiedades-mcp": "src/index.js"
+  },
+  "scripts": {
+    "build": "node --check src/index.js",
+    "test": "node --test test/*.test.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {}
+}

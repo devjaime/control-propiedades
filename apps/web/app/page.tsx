@@ -1,33 +1,19 @@
-const foundations = [
-  "Separación de datos por organización",
-  "PostgreSQL como fuente oficial",
-  "Archivos privados en almacenamiento de objetos",
-  "Aprobación humana para acciones sensibles",
+import Link from "next/link";
+import { LandingMotion } from "@/components/landing-motion";
+
+const capabilities = [
+  { number: "01", title: "Un expediente por propiedad", copy: "Contratos, comprobantes, incidentes y evidencias quedan separados por inmueble y ordenados en el tiempo." },
+  { number: "02", title: "Pagos que se pueden comprobar", copy: "Distingue el respaldo bancario del voucher de arriendo conciliado y entrega una verificación pública mediante QR." },
+  { number: "03", title: "Seguimiento compartido", copy: "El arrendatario consulta pagos vigentes y avances autorizados usando un enlace protegido, sin acceder a tus notas internas." },
+];
+
+const agentFlow = [
+  { label: "Tú indicas", title: "“Sube esta evidencia al incidente de Coquimbo”", copy: "Hablas con tu agente desde Hermes en lenguaje natural." },
+  { label: "El agente prepara", title: "Identifica propiedad, ticket y archivo", copy: "Consulta datos vigentes y presenta la acción antes de ejecutarla." },
+  { label: "Tú apruebas", title: "La plataforma registra y preserva", copy: "Guarda el original, su hash y la actividad asociada en la nube." },
+  { label: "Las partes consultan", title: "El portal muestra sólo lo autorizado", copy: "Propietario y arrendatario trabajan sobre una versión ordenada de los hechos." },
 ];
 
 export default function Home() {
-  return (
-    <main>
-      <section className="hero">
-        <p className="eyebrow">Fundación del producto</p>
-        <h1>Control Propiedades</h1>
-        <p className="summary">
-          Una plataforma para organizar la operación, las finanzas y el expediente documental de cada propiedad.
-        </p>
-        <div className="status" role="status">
-          <span aria-hidden="true" />
-          Base técnica preparada
-        </div>
-      </section>
-
-      <section className="principles" aria-labelledby="principles-title">
-        <h2 id="principles-title">Principios desde el inicio</h2>
-        <ul>
-          {foundations.map((foundation) => (
-            <li key={foundation}>{foundation}</li>
-          ))}
-        </ul>
-      </section>
-    </main>
-  );
+  return <main className="landing-shell"><LandingMotion /><nav className="landing-nav"><Link className="landing-brand" href="/">Control Propiedades</Link><div><a href="#como-funciona">Cómo funciona</a><a href="#agente">Agente MCP</a><Link href="/ingresar">Ingresar</Link><Link className="primary-button link-button" href="/registro">Comenzar</Link></div></nav><section className="marketing-hero"><div className="marketing-copy"><p className="eyebrow">Administración patrimonial asistida</p><h1>Tu propiedad tiene historia. Haz que también tenga orden.</h1><p className="summary">Centraliza arriendos, pagos, reparaciones y evidencia en una plataforma verificable. Conecta un agente que te ayuda a operar sin perder el control de las decisiones.</p><div className="hero-actions"><Link className="primary-button link-button" href="/registro">Crear mi espacio</Link><a className="secondary-button link-button" href="#agente">Conocer el agente</a></div><small>Comienza con una propiedad. Tu portafolio puede crecer sin mezclar expedientes.</small></div><div className="hero-visual"><span className="orbit-dot orbit-dot-one" aria-hidden="true" /><span className="orbit-dot orbit-dot-two" aria-hidden="true" /><div className="hero-product-card" aria-label="Vista resumida del producto"><header><span>Portafolio familiar</span><i><b aria-hidden="true" /> En línea</i></header><div className="hero-property"><small>Casa Coquimbo</small><strong>Arriendo de agosto conciliado</strong><span><b aria-hidden="true">✓</b> Voucher verificable disponible</span></div><div className="hero-agent-message"><div className="agent-message-label"><span>Agente</span><i aria-hidden="true"><b /><b /><b /></i></div><p>Encontré 2 evidencias nuevas para el incidente de drenaje. ¿Deseas preservarlas y vincularlas al ticket?</p><button type="button">Revisar antes de aprobar <b aria-hidden="true">→</b></button></div><footer><span>3 propiedades</span><span>1 acción pendiente</span><span>Archivo privado</span></footer></div></div></section><section className="trust-strip"><span>PostgreSQL administrado</span><span>Archivos privados</span><span>Accesos registrados</span><span>Aprobación humana</span></section><section className="marketing-section" id="como-funciona"><div className="marketing-section-heading" data-reveal><p className="eyebrow">Un sistema, no otra carpeta</p><h2>Todo lo necesario para sostener la relación de arriendo</h2><p>La información importante queda asociada a la propiedad, al período y al evento que corresponde.</p></div><div className="capability-grid" data-reveal>{capabilities.map((item) => <article key={item.number}><span>{item.number}</span><h3>{item.title}</h3><p>{item.copy}</p><i aria-hidden="true">↗</i></article>)}</div></section><section className="agent-marketing" id="agente" data-reveal><div className="agent-marketing-intro"><p className="eyebrow">Agente conectado por MCP</p><h2>De una conversación a una acción trazable</h2><p>Hermes se conecta con la versión en la nube mediante una credencial revocable. Puede consultar, ordenar y preparar acciones; las operaciones sensibles siguen dependiendo de tu confirmación.</p><Link className="secondary-button link-button" href="/registro">Configurar mi agente</Link></div><ol className="agent-flow">{agentFlow.map((step, index) => <li key={step.label}><span>{String(index + 1).padStart(2, "0")}</span><div><small>{step.label}</small><h3>{step.title}</h3><p>{step.copy}</p></div></li>)}</ol></section><section className="marketing-cta" data-reveal><div><p className="eyebrow">Empieza con lo que ya tienes</p><h2>Una propiedad, un contrato y el próximo comprobante.</h2><p>El onboarding te acompaña para crear el expediente, configurar el arriendo y habilitar el portal compartido.</p></div><Link className="primary-button link-button" href="/registro">Crear cuenta y comenzar</Link></section><footer className="landing-footer"><span>Control Propiedades</span><p>Orden operativo, evidencia privada y comprobantes verificables.</p><Link href="/ingresar">Acceso propietarios</Link></footer></main>;
 }
