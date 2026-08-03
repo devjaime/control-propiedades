@@ -1,4 +1,4 @@
-.PHONY: bootstrap infra-up infra-down api-dev api-test api-build web-dev web-lint web-build test build
+.PHONY: bootstrap infra-up infra-down migrate-up migrate-down migrate-status api-dev api-test api-build web-dev web-lint web-build test build
 
 bootstrap:
 	npm install
@@ -10,8 +10,17 @@ infra-up:
 infra-down:
 	docker compose down
 
+migrate-up:
+	set -a; . ./.env; set +a; cd apps/api && go run github.com/pressly/goose/v3/cmd/goose@v3.27.2 -dir ../../migrations postgres "$$DATABASE_URL" up
+
+migrate-down:
+	set -a; . ./.env; set +a; cd apps/api && go run github.com/pressly/goose/v3/cmd/goose@v3.27.2 -dir ../../migrations postgres "$$DATABASE_URL" down
+
+migrate-status:
+	set -a; . ./.env; set +a; cd apps/api && go run github.com/pressly/goose/v3/cmd/goose@v3.27.2 -dir ../../migrations postgres "$$DATABASE_URL" status
+
 api-dev:
-	cd apps/api && go run ./cmd/api
+	set -a; . ./.env; set +a; cd apps/api && go run ./cmd/api
 
 api-test:
 	cd apps/api && go test ./...
@@ -21,7 +30,7 @@ api-build:
 	cd apps/api && go build -o ../../bin/api ./cmd/api
 
 web-dev:
-	npm run dev --workspace=@control-propiedades/web
+	set -a; . ./.env; set +a; npm run dev --workspace=@control-propiedades/web
 
 web-lint:
 	npm run lint --workspace=@control-propiedades/web

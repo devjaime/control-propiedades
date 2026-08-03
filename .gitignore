@@ -13,7 +13,25 @@ node_modules/
 out/
 npm-debug.log*
 apps/web/next-env.d.ts
+*.tsbuildinfo
 
 # Editors
 .idea/
 .vscode/
+.neon
+.env.storage.local
+.env.hermes.local
+.env.tenant-portal.local
+
+# Generated previews and private operational evidence
+output/
+tmp/
+public/uploads/
+
+# One-off local backfills contain case-specific personal and financial data.
+# Keep them available locally, but never publish them in this public repository.
+apps/api/cmd/correct-rent-ledger/
+apps/api/cmd/ingest-case-evidence/
+apps/api/cmd/ingest-eduardo-august-payment/
+apps/api/cmd/ingest-service-account-request/
+apps/api/cmd/ingest-utility-evidence/

@@ -3,19 +3,20 @@
   "private": true,
   "packageManager": "npm@11.17.0",
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "apps/mcp"
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace=@control-propiedades/web",
     "build": "npm run build --workspace=@control-propiedades/web",
-    "lint": "npm run lint --workspace=@control-propiedades/web"
+    "lint": "npm run lint --workspace=@control-propiedades/web",
+    "build:mcp": "npm run build --workspace=@control-propiedades/mcp"
   },
   "engines": {
     "node": ">=20.9"
   },
   "overrides": {
-    "next@16.2.10": {
-      "postcss": "8.5.10"
-    }
+    "postcss": "8.5.18",
+    "sharp": "0.35.3"
   }
 }

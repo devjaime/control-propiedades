@@ -4,15 +4,25 @@ Aplicación web para administrar propiedades, documentos, arriendos, pagos y man
 
 ## Estado
 
-Primera iteración de fundación:
+Funcionalidades disponibles:
 
-- API Go con endpoints de salud.
-- Web Next.js con App Router.
-- PostgreSQL y MinIO en Docker Compose.
-- Configuración por variables de entorno.
-- Primera migración del dominio base.
+- Registro de cuenta y organización.
+- Inicio y cierre de sesión mediante cookie segura.
+- Registro de propiedades con aislamiento por organización.
+- Carga privada de PDF e imágenes en MinIO.
+- Clasificación por propiedad, tipo y etiquetas.
+- Búsqueda documental y descarga autorizada.
+- Detección de archivos duplicados mediante SHA-256.
+- Bandeja de revisión, metadatos ampliados y verificación humana inmutable.
+- Contratos con arrendatario fijo durante cada vigencia y cierre auditado.
+- Arriendo mensual dividido entre una y doce cuotas con días configurables.
+- Conciliación humana de depósitos y comprobante PDF con QR público verificable.
+- Alertas de pagos, vencimiento contractual, restitución, reajuste IPC y mantenciones.
+- Calendario trimestral de alertas y sugerencias de revisión.
 
-Todavía no incluye autenticación, CRUD, carga documental ni agentes.
+La integración con OpenClaw, HermesAgents y otros agentes todavía está planificada; los datos operativos ya se almacenan estructurados para permitir su análisis posterior.
+
+Consulta [el estado detallado de implementación](docs/IMPLEMENTATION_STATUS.md), [el diseño documental](docs/DOCUMENT_STORAGE.md), [el flujo de arriendos y pagos](docs/RENTALS_AND_PAYMENTS.md) y [la contratación asistida](docs/LEASE_CONTRACT_WORKFLOW.md).
 
 ## Requisitos
 
@@ -27,8 +37,7 @@ Todavía no incluye autenticación, CRUD, carga documental ni agentes.
 cp .env.example .env
 make bootstrap
 make infra-up
-set -a && source .env && set +a
-cd apps/api && go run github.com/pressly/goose/v3/cmd/goose@v3.27.2 -dir ../../migrations postgres "$DATABASE_URL" up
+make migrate-up
 ```
 
 En terminales separadas:
@@ -52,3 +61,7 @@ curl http://localhost:8080/health/ready
 ```
 
 Consulta [la arquitectura](docs/ARCHITECTURE.md) y [el desarrollo local](docs/LOCAL_DEVELOPMENT.md) para más detalles.
+
+## Despliegue en la nube
+
+La aplicación puede desplegarse con Vercel para la web y la API Go, Neon para PostgreSQL y Supabase Storage para archivos privados. Consulta la [guía de despliegue paso a paso](docs/CLOUD_DEPLOYMENT.md).
