@@ -31,7 +31,4 @@ public/uploads/
 # One-off local backfills contain case-specific personal and financial data.
 # Keep them available locally, but never publish them in this public repository.
 apps/api/cmd/correct-rent-ledger/
-apps/api/cmd/ingest-case-evidence/
-apps/api/cmd/ingest-eduardo-august-payment/
-apps/api/cmd/ingest-service-account-request/
-apps/api/cmd/ingest-utility-evidence/
+apps/api/cmd/ingest-*/

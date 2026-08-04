@@ -325,4 +325,12 @@ export type TenantPortalIncident = {
     content: string;
     occurred_at: string;
   }>;
+  documents: Array<{
+    id: string;
+    display_name: string;
+    original_name: string;
+    mime_type: string;
+    document_date: string;
+    url: string;
+  }>;
 };
