@@ -442,6 +442,24 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .portal-update-list li { padding: .4rem 0 .8rem .3rem; }
 .portal-update-list time { color: var(--muted); font-size: .76rem; }
 .portal-update-list p { margin: .25rem 0 0; line-height: 1.55; }
+.incident-evidence { margin-top: 1.4rem; padding: clamp(.85rem, 3vw, 1.15rem); border: 1px solid var(--line); border-radius: .9rem; background: color-mix(in srgb, var(--surface) 82%, var(--background)); }
+.incident-evidence-heading, .incident-carousel-caption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.incident-evidence-heading h3 { margin: .1rem 0 .7rem; }
+.incident-evidence-heading > span, .incident-carousel-caption small { color: var(--muted); font-size: .78rem; white-space: nowrap; }
+.incident-carousel-stage { position: relative; display: grid; min-height: min(62vw, 28rem); overflow: hidden; place-items: center; border-radius: .75rem; background: #182019; }
+.incident-carousel-stage > img { width: 100%; height: min(62vw, 28rem); object-fit: contain; }
+.incident-carousel-controls { position: absolute; inset: 50% .65rem auto; display: flex; justify-content: space-between; pointer-events: none; transform: translateY(-50%); }
+.carousel-button { display: grid; width: 2.55rem; height: 2.55rem; padding: 0; border: 1px solid rgb(255 255 255 / .35); border-radius: 999px; background: rgb(13 24 16 / .78); color: white; cursor: pointer; font-size: 1.25rem; place-items: center; pointer-events: auto; transition: background .2s ease, transform .2s ease; }
+.carousel-button:hover { background: rgb(13 24 16 / .95); transform: scale(1.06); }
+.incident-carousel-caption { padding: .75rem .1rem .35rem; }
+.incident-carousel-caption strong { font-size: .9rem; }
+.incident-carousel-thumbnails { display: flex; gap: .5rem; overflow-x: auto; padding: .35rem .1rem .55rem; scroll-snap-type: x proximity; }
+.incident-carousel-thumbnails button { flex: 0 0 4rem; height: 3.25rem; overflow: hidden; padding: 0; border: 2px solid transparent; border-radius: .55rem; background: var(--surface); color: var(--muted); cursor: pointer; scroll-snap-align: start; }
+.incident-carousel-thumbnails button.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.incident-carousel-thumbnails img { width: 100%; height: 100%; object-fit: cover; }
+.incident-attachment-list { display: grid; gap: .55rem; margin: .7rem 0 0; padding: 0; list-style: none; }
+.incident-attachment-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem; border-radius: .65rem; background: var(--surface); }
+.incident-attachment-list small { display: block; margin-top: .2rem; color: var(--muted); }
 .empty-state { padding: 2rem; border: 1px dashed var(--line); border-radius: 1rem; color: var(--muted); text-align: center; }
 .incident-task-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .5rem; }
 .visibility-toggle { padding: .45rem .6rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); color: var(--muted); font-size: .72rem; font-weight: 700; }

@@ -64,17 +64,27 @@ type tenantPortalUpdate struct {
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
+type tenantPortalIncidentDocument struct {
+	ID           string `json:"id"`
+	DisplayName  string `json:"display_name"`
+	OriginalName string `json:"original_name"`
+	MimeType     string `json:"mime_type"`
+	DocumentDate string `json:"document_date"`
+	URL          string `json:"url"`
+}
+
 type tenantPortalIncident struct {
-	ID           string               `json:"id"`
-	Reference    string               `json:"reference"`
-	Title        string               `json:"title"`
-	Summary      string               `json:"summary"`
-	Status       string               `json:"status"`
-	Priority     string               `json:"priority"`
-	Habitability string               `json:"habitability"`
-	EventDate    string               `json:"event_date"`
-	Tasks        []tenantPortalTask   `json:"tasks"`
-	Updates      []tenantPortalUpdate `json:"updates"`
+	ID           string                         `json:"id"`
+	Reference    string                         `json:"reference"`
+	Title        string                         `json:"title"`
+	Summary      string                         `json:"summary"`
+	Status       string                         `json:"status"`
+	Priority     string                         `json:"priority"`
+	Habitability string                         `json:"habitability"`
+	EventDate    string                         `json:"event_date"`
+	Tasks        []tenantPortalTask             `json:"tasks"`
+	Updates      []tenantPortalUpdate           `json:"updates"`
+	Documents    []tenantPortalIncidentDocument `json:"documents"`
 }
 
 type tenantPortalRentSummary struct {
@@ -444,20 +454,30 @@ func (app *application) downloadTenantPortalDocument(w http.ResponseWriter, r *h
 				WHERE receipt.document_id = d.id AND receipt.status = 'valid'
 			) OR (d.document_type = 'utility' AND d.period IS NOT NULL AND d.document_date IS NOT NULL
 			      AND d.amount_minor IS NOT NULL AND d.tags @> ARRAY['pago']::text[])
+			OR EXISTS (
+				SELECT 1
+				FROM incident_documents incident_document
+				JOIN incidents incident ON incident.id = incident_document.incident_id
+				WHERE incident_document.document_id = d.id
+				  AND incident.organization_id = d.organization_id
+				  AND incident.property_id = d.property_id
+				  AND incident.status IN ('open', 'in_progress', 'resolved')
+				  AND d.tags @> ARRAY['tenant-visible']::text[]
+			)
 		  )
 	`, chi.URLParam(r, "documentID"), access.OrganizationID, access.PropertyID).Scan(&storageKey, &originalName, &mimeType)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeError(w, http.StatusNotFound, "document_not_found", "El comprobante no existe o ya no está vigente.")
+		writeError(w, http.StatusNotFound, "document_not_found", "El archivo no existe o ya no está disponible.")
 		return
 	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "document_read_failed", "No fue posible consultar el comprobante.")
+		writeError(w, http.StatusInternalServerError, "document_read_failed", "No fue posible consultar el archivo.")
 		return
 	}
 	object, err := app.storage.Get(r.Context(), storageKey)
 	if err != nil {
 		app.logger.Error("read tenant portal document", "error", err, "document_id", chi.URLParam(r, "documentID"))
-		writeError(w, http.StatusBadGateway, "storage_read_failed", "No fue posible descargar el comprobante.")
+		writeError(w, http.StatusBadGateway, "storage_read_failed", "No fue posible descargar el archivo.")
 		return
 	}
 	defer object.Close()
@@ -524,6 +544,47 @@ func (app *application) loadTenantPortalIncidents(r *http.Request, organizationI
 			incident.Updates = append(incident.Updates, update)
 		}
 		updateRows.Close()
+		incident.Documents = make([]tenantPortalIncidentDocument, 0)
+		documentRows, err := app.db.Query(r.Context(), `
+			SELECT document.id, document.display_name, document.original_name, document.mime_type, document.storage_key,
+			       COALESCE(to_char(document.document_date, 'YYYY-MM-DD'), '')
+			FROM incident_documents incident_document
+			JOIN documents document ON document.id = incident_document.document_id
+			WHERE incident_document.incident_id = $1
+			  AND document.organization_id = $2
+			  AND document.property_id = $3
+			  AND document.status = 'verified'
+			  AND document.tags @> ARRAY['tenant-visible']::text[]
+			ORDER BY document.document_date DESC NULLS LAST, incident_document.created_at DESC, document.id
+		`, incident.ID, organizationID, propertyID)
+		if err != nil {
+			return nil, err
+		}
+		for documentRows.Next() {
+			var document tenantPortalIncidentDocument
+			var storageKey string
+			if err := documentRows.Scan(&document.ID, &document.DisplayName, &document.OriginalName,
+				&document.MimeType, &storageKey, &document.DocumentDate); err != nil {
+				documentRows.Close()
+				return nil, err
+			}
+			directStorage, ok := app.storage.(DirectObjectStorage)
+			if !ok {
+				documentRows.Close()
+				return nil, errors.New("tenant portal evidence requires direct object storage")
+			}
+			document.URL, err = directStorage.PresignGet(r.Context(), storageKey, document.OriginalName, "inline", document.MimeType, 5*time.Minute)
+			if err != nil {
+				documentRows.Close()
+				return nil, err
+			}
+			incident.Documents = append(incident.Documents, document)
+		}
+		if err := documentRows.Err(); err != nil {
+			documentRows.Close()
+			return nil, err
+		}
+		documentRows.Close()
 		incidents = append(incidents, incident)
 	}
 	return incidents, rows.Err()

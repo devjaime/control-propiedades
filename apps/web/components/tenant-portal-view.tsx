@@ -38,6 +38,33 @@ const documentKindLabel: Record<PortalData["payment_documents"][number]["kind"],
   utility: "Pago de servicio",
 };
 
+type IncidentDocument = TenantPortalIncident["documents"][number];
+
+function IncidentEvidenceCarousel({ documents, downloadDocument, downloadingID }: {
+  documents: IncidentDocument[];
+  downloadDocument: (document: Pick<IncidentDocument, "id" | "original_name">) => Promise<void>;
+  downloadingID: string;
+}) {
+  const images = documents.filter((document) => document.mime_type.startsWith("image/"));
+  const attachments = documents.filter((document) => !document.mime_type.startsWith("image/"));
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  if (!documents.length) return null;
+  const active = images[Math.min(activeIndex, Math.max(images.length - 1, 0))];
+  return <section className="incident-evidence" aria-labelledby={`incident-evidence-${documents[0].id}`}>
+    <div className="incident-evidence-heading"><div><p className="eyebrow">Evidencia compartida</p><h3 id={`incident-evidence-${documents[0].id}`}>Registro fotográfico</h3></div>{images.length ? <span>{activeIndex + 1} de {images.length}</span> : null}</div>
+    {images.length && active ? <>
+      <div className="incident-carousel-stage">
+        <img alt={active.display_name} src={active.url} />
+        {images.length > 1 ? <div className="incident-carousel-controls"><button aria-label="Fotografía anterior" className="carousel-button" onClick={() => setActiveIndex((index) => (index - 1 + images.length) % images.length)} type="button">←</button><button aria-label="Fotografía siguiente" className="carousel-button" onClick={() => setActiveIndex((index) => (index + 1) % images.length)} type="button">→</button></div> : null}
+      </div>
+      <div className="incident-carousel-caption"><strong>{active.display_name}</strong>{active.document_date ? <small>{new Date(`${active.document_date}T12:00:00`).toLocaleDateString("es-CL")}</small> : null}</div>
+      {images.length > 1 ? <div className="incident-carousel-thumbnails" aria-label="Seleccionar fotografía">{images.map((document, index) => <button aria-label={`Ver fotografía ${index + 1}: ${document.display_name}`} aria-pressed={index === activeIndex} className={index === activeIndex ? "is-active" : ""} key={document.id} onClick={() => setActiveIndex(index)} type="button"><img alt="" loading="lazy" src={document.url} /></button>)}</div> : null}
+    </> : null}
+    {attachments.length ? <ul className="incident-attachment-list">{attachments.map((document) => <li key={document.id}><span><strong>{document.display_name}</strong><small>{document.mime_type}</small></span><button className="secondary-button" disabled={downloadingID === document.id} onClick={() => void downloadDocument(document)} type="button">{downloadingID === document.id ? "Descargando…" : "Descargar"}</button></li>)}</ul> : null}
+  </section>;
+}
+
 export function TenantPortalView({ token }: { token: string }) {
   const [accessKey, setAccessKey] = useState(() => typeof window === "undefined" ? "" : (sessionStorage.getItem(`tenant-portal:${token}`) ?? ""));
   const [data, setData] = useState<PortalData | null>(null);
@@ -58,7 +85,7 @@ export function TenantPortalView({ token }: { token: string }) {
     } finally { setWorking(false); }
   }
 
-  async function downloadDocument(document: PortalData["payment_documents"][number]) {
+  async function downloadDocument(document: { id: string; original_name: string }) {
     setDownloadingID(document.id);
     setDownloadError("");
     try {
@@ -70,7 +97,7 @@ export function TenantPortalView({ token }: { token: string }) {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        throw new Error(body?.error?.message ?? "No fue posible descargar el comprobante.");
+        throw new Error(body?.error?.message ?? "No fue posible descargar el archivo.");
       }
       const blobURL = URL.createObjectURL(await response.blob());
       const anchor = window.document.createElement("a");
@@ -79,7 +106,7 @@ export function TenantPortalView({ token }: { token: string }) {
       anchor.click();
       URL.revokeObjectURL(blobURL);
     } catch (caught) {
-      setDownloadError(caught instanceof Error ? caught.message : "No fue posible descargar el comprobante.");
+      setDownloadError(caught instanceof Error ? caught.message : "No fue posible descargar el archivo.");
     } finally {
       setDownloadingID("");
     }
@@ -91,6 +118,6 @@ export function TenantPortalView({ token }: { token: string }) {
     <section className="portal-notice"><strong>Información operativa</strong><p>Este panel comunica el avance de reparaciones. No modifica el contrato ni constituye por sí solo un acuerdo económico.</p></section>
     <section className="portal-rent-summary" aria-labelledby="rent-summary-title"><div><p className="eyebrow">Estado de arriendo</p><h2 id="rent-summary-title">Último período pagado: {periodLabel(data.rent_summary.last_paid_period)}</h2></div>{data.rent_summary.current_period ? <div className="portal-rent-values"><span><small>Período siguiente</small><strong>{periodLabel(data.rent_summary.current_period)}</strong></span><span><small>Abonado</small><strong>{money(data.rent_summary.received_minor)}</strong></span><span><small>Saldo registrado</small><strong>{money(data.rent_summary.balance_minor)}</strong></span></div> : <p>Sin saldos pendientes registrados.</p>}<small>Información basada en pagos conciliados. No representa una rebaja, compensación o condonación salvo acuerdo escrito entre las partes.</small></section>
     <section className="portal-payment-archive" aria-labelledby="payment-archive-title"><div className="portal-section-heading"><div><p className="eyebrow">Archivo compartido</p><h2 id="payment-archive-title">Comprobantes, servicios y vouchers</h2></div><span>{data.payment_documents.length} archivos vigentes</span></div><p className="muted-copy">El archivo distingue los respaldos bancarios, los vouchers emitidos después de conciliar el arriendo y los pagos verificados de servicios de la propiedad.</p>{downloadError ? <p className="form-error" role="alert">{downloadError}</p> : null}{data.payment_documents.length ? <ul className="portal-document-list">{data.payment_documents.map((document) => <li key={document.id}><div className="portal-document-copy"><span className={`document-kind document-kind-${document.kind}`}>{documentKindLabel[document.kind]}</span><strong>{document.display_name || periodLabel(document.period)}</strong><small>{document.folio ? `${document.folio} · ` : ""}{money(document.amount_minor)} · {new Date(`${document.document_date}T12:00:00`).toLocaleDateString("es-CL")}</small></div><div className="portal-document-actions"><button className="secondary-button" disabled={downloadingID === document.id} onClick={() => void downloadDocument(document)} type="button">{downloadingID === document.id ? "Descargando…" : "Descargar"}</button>{document.verification_url ? <a className="text-link" href={document.verification_url} rel="noreferrer" target="_blank">Verificar</a> : null}</div></li>)}</ul> : <p className="empty-state">Todavía no hay comprobantes verificados disponibles.</p>}<small className="portal-privacy-note">Acceso privado y registrado. Los respaldos pueden contener datos personales; no reenvíes este enlace ni tu código fuera de las partes del contrato.</small></section>
-    <section className="ticket-grid">{data.incidents.length ? data.incidents.map((incident) => <article className="ticket-card" key={incident.id}><div className="ticket-heading"><div><span className={`priority-dot priority-${incident.priority}`} aria-hidden="true" /><p>{incident.reference}</p><h2>{incident.title}</h2></div><span className="status-badge">{statusLabel[incident.status] ?? incident.status}</span></div>{incident.summary ? <p className="ticket-summary">{incident.summary}</p> : null}<h3>Acciones</h3>{incident.tasks.length ? <ul className="portal-task-list">{incident.tasks.map((task) => <li key={task.id}><div><strong>{task.title}</strong>{task.due_on ? <small>Fecha objetivo: {new Date(`${task.due_on}T12:00:00`).toLocaleDateString("es-CL")}</small> : null}</div><span>{statusLabel[task.status] ?? task.status}</span></li>)}</ul> : <p className="muted-copy">Sin acciones públicas pendientes.</p>}{incident.updates.length ? <><h3>Últimas novedades</h3><ol className="portal-update-list">{incident.updates.map((update) => <li key={update.id}><time>{new Date(update.occurred_at).toLocaleString("es-CL")}</time><p>{update.content}</p></li>)}</ol></> : null}</article>) : <p className="empty-state">No hay tickets visibles en curso.</p>}</section>
+    <section className="ticket-grid">{data.incidents.length ? data.incidents.map((incident) => <article className="ticket-card" key={incident.id}><div className="ticket-heading"><div><span className={`priority-dot priority-${incident.priority}`} aria-hidden="true" /><p>{incident.reference}</p><h2>{incident.title}</h2></div><span className="status-badge">{statusLabel[incident.status] ?? incident.status}</span></div>{incident.summary ? <p className="ticket-summary">{incident.summary}</p> : null}<IncidentEvidenceCarousel documents={incident.documents ?? []} downloadDocument={downloadDocument} downloadingID={downloadingID} /><h3>Acciones</h3>{incident.tasks.length ? <ul className="portal-task-list">{incident.tasks.map((task) => <li key={task.id}><div><strong>{task.title}</strong>{task.due_on ? <small>Fecha objetivo: {new Date(`${task.due_on}T12:00:00`).toLocaleDateString("es-CL")}</small> : null}</div><span>{statusLabel[task.status] ?? task.status}</span></li>)}</ul> : <p className="muted-copy">Sin acciones públicas pendientes.</p>}{incident.updates.length ? <><h3>Últimas novedades</h3><ol className="portal-update-list">{incident.updates.map((update) => <li key={update.id}><time>{new Date(update.occurred_at).toLocaleString("es-CL")}</time><p>{update.content}</p></li>)}</ol></> : null}</article>) : <p className="empty-state">No hay tickets visibles en curso.</p>}</section>
   </main>;
 }
